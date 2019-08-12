@@ -11,14 +11,15 @@ import UIKit
 class ViewController: UIViewController {
 
     @IBOutlet weak var quoteLabel: UILabel!
-    @IBOutlet weak var imageView: UILabel!
+    @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var authorLabel: UILabel!
     @IBOutlet weak var newQuoteButton: UIButton!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
-    
+
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        downloadQuote()
     }
 
     func addShadowToQuoteLabel() {
@@ -28,8 +29,44 @@ class ViewController: UIViewController {
     }
 
     @IBAction func tappedNewQuoteButton(_ sender: UIButton) {
-        QuoteService.getQuote()
+        downloadQuote()
     }
 
+    private func downloadQuote() {
+        toggleActivityIndicator(shown: true)
+
+        QuoteService.shared.getQuote { (success, quote) in
+            self.toggleActivityIndicator(shown: false)
+
+            if success, let quote = quote {
+                self.update(quote: quote)
+            } else {
+                self.presentAlert()
+            }
+        }
+    }
+
+    private func toggleActivityIndicator(shown: Bool) {
+        self.newQuoteButton.isHidden = shown
+        self.activityIndicator.isHidden = !shown
+        self.activityIndicator.startAnimating()
+
+    }
+
+    private func update(quote: Quote) {
+        quoteLabel.text = quote.text
+        authorLabel.text = quote.author
+        imageView.image = UIImage(data: quote.imageData)
+
+    }
+
+    private func presentAlert() {
+        let alert = UIAlertController(title: "Error", message: "The quote download failed", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+
+
 }
+
 
